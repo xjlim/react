@@ -52,7 +52,7 @@ describe('ChangeEventPlugin', () => {
     );
 
     setUntrackedValue(input, true);
-    ReactTestUtils.SimulateNative.click(input);
+    ReactTestUtils.SimulateNative.change(input);
 
     expect(called).toBe(1);
   });
@@ -101,12 +101,12 @@ describe('ChangeEventPlugin', () => {
     );
 
     input.checked = true;
-    ReactTestUtils.SimulateNative.click(input);
+    ReactTestUtils.SimulateNative.change(input);
     expect(called).toBe(0);
 
     input.checked = false;
     setTrackedValue(input, undefined);
-    ReactTestUtils.SimulateNative.click(input);
+    ReactTestUtils.SimulateNative.change(input);
 
     expect(called).toBe(1);
   });
@@ -129,8 +129,8 @@ describe('ChangeEventPlugin', () => {
       <input type="radio" onChange={cb} />,
     );
     setUntrackedValue(input, true);
-    ReactTestUtils.SimulateNative.click(input);
-    ReactTestUtils.SimulateNative.click(input);
+    ReactTestUtils.SimulateNative.change(input);
+    ReactTestUtils.SimulateNative.change(input);
     expect(called).toBe(1);
   });
 
