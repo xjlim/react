@@ -25,28 +25,28 @@
       "gzip": 6703
     },
     "react-dom.development.js (UMD_DEV)": {
-      "size": 613875,
-      "gzip": 141842
+      "size": 613860,
+      "gzip": 141846
     },
     "react-dom.production.min.js (UMD_PROD)": {
-      "size": 99469,
-      "gzip": 31443
+      "size": 99471,
+      "gzip": 31447
     },
     "react-dom.development.js (NODE_DEV)": {
-      "size": 576136,
-      "gzip": 133165
+      "size": 576121,
+      "gzip": 133032
     },
     "react-dom.production.min.js (NODE_PROD)": {
-      "size": 104422,
-      "gzip": 32815
+      "size": 104421,
+      "gzip": 32803
     },
     "ReactDOMFiber-dev.js (FB_DEV)": {
-      "size": 573085,
-      "gzip": 132629
+      "size": 573070,
+      "gzip": 132494
     },
     "ReactDOMFiber-prod.js (FB_PROD)": {
-      "size": 409433,
-      "gzip": 91568
+      "size": 409429,
+      "gzip": 91563
     },
     "react-dom-test-utils.development.js (NODE_DEV)": {
       "size": 41660,
