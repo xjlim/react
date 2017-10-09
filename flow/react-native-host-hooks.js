@@ -86,3 +86,42 @@ declare module 'UIManager' {
 declare module 'View' {
   declare var exports : typeof React$Component;
 }
+
+declare module 'RTManager' {
+  declare function createNode(
+    tag : number,
+    classType : string,
+    props : ?Object,
+  ) : void;
+
+  declare function beginUpdates() : void;
+
+  declare function appendChildToContext(
+    contextTag : number,
+    childTag : number,
+  ) : void;
+  declare function appendChild(
+    parentTag : number,
+    childTag : number,
+  ) : void;
+  declare function prependChild(
+    childTag : number,
+    beforeTag : number,
+  ) : void;
+  declare function deleteChild(
+    childTag : number,
+  ) : void;
+  declare function updateNode(
+    tag : number,
+    props : ?Object,
+  ) : void;
+
+  declare function completeUpdates() : void;
+}
+
+declare module 'BatchedBridge' {
+  declare function registerCallableModule(
+    name : string,
+    module : Object,
+  ) : void;
+}

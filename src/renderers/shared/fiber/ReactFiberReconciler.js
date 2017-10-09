@@ -34,6 +34,7 @@ if (__DEV__) {
   var ReactFiberInstrumentation = require('ReactFiberInstrumentation');
   var ReactDebugCurrentFiber = require('ReactDebugCurrentFiber');
   var getComponentName = require('getComponentName');
+  var didWarnAboutNestedUpdates = false;
 }
 
 var {
@@ -139,14 +140,48 @@ export type HostConfig<T, P, I, TI, PI, C, CX, PL> = {
     text: string,
     internalInstanceHandle: OpaqueHandle,
   ) => boolean,
-  didNotHydrateInstance?: (parentInstance: I | C, instance: I | TI) => void,
+  didNotMatchHydratedContainerTextInstance?: (
+    parentContainer: C,
+    textInstance: TI,
+    text: string,
+  ) => void,
+  didNotMatchHydratedTextInstance?: (
+    parentType: T,
+    parentProps: P,
+    parentInstance: I,
+    textInstance: TI,
+    text: string,
+  ) => void,
+  didNotHydrateContainerInstance?: (
+    parentContainer: C,
+    instance: I | TI,
+  ) => void,
+  didNotHydrateInstance?: (
+    parentType: T,
+    parentProps: P,
+    parentInstance: I,
+    instance: I | TI,
+  ) => void,
+  didNotFindHydratableContainerInstance?: (
+    parentContainer: C,
+    type: T,
+    props: P,
+  ) => void,
+  didNotFindHydratableContainerTextInstance?: (
+    parentContainer: C,
+    text: string,
+  ) => void,
   didNotFindHydratableInstance?: (
-    parentInstance: I | C,
+    parentType: T,
+    parentProps: P,
+    parentInstance: I,
     type: T,
     props: P,
   ) => void,
   didNotFindHydratableTextInstance?: (
-    parentInstance: I | C,
+    parentType: T,
+    parentProps: P,
+    parentInstance: I,
     text: string,
   ) => void,
 
@@ -214,8 +249,10 @@ module.exports = function<T, P, I, TI, PI, C, CX, PL>(
     if (__DEV__) {
       if (
         ReactDebugCurrentFiber.phase === 'render' &&
-        ReactDebugCurrentFiber.current !== null
+        ReactDebugCurrentFiber.current !== null &&
+        !didWarnAboutNestedUpdates
       ) {
+        didWarnAboutNestedUpdates = true;
         warning(
           false,
           'Render methods should be a pure function of props and state; ' +

@@ -53,6 +53,7 @@ var registrationNameModules = EventPluginRegistry.registrationNameModules;
 
 var DANGEROUSLY_SET_INNER_HTML = 'dangerouslySetInnerHTML';
 var SUPPRESS_CONTENT_EDITABLE_WARNING = 'suppressContentEditableWarning';
+var SUPPRESS_HYDRATION_WARNING = 'suppressHydrationWarning';
 var CHILDREN = 'children';
 var STYLE = 'style';
 var HTML = '__html';
@@ -66,6 +67,8 @@ if (__DEV__) {
     // *don't* warn for <time> even if it's unrecognized by Chrome because
     // it soon will be, and many apps have been using it anyway.
     time: true,
+    // There are working polyfills for <dialog>. Let people use it.
+    dialog: true,
   };
 
   var validatePropertiesInDevelopment = function(type, props) {
@@ -74,16 +77,41 @@ if (__DEV__) {
     validateUnknownProperties(type, props);
   };
 
-  var warnForTextDifference = function(serverText: string, clientText: string) {
+  // HTML parsing normalizes CR and CRLF to LF.
+  // It also can turn \u0000 into \uFFFD inside attributes.
+  // https://www.w3.org/TR/html5/single-page.html#preprocessing-the-input-stream
+  // If we have a mismatch, it might be caused by that.
+  // We will still patch up in this case but not fire the warning.
+  var NORMALIZE_NEWLINES_REGEX = /\r\n?/g;
+  var NORMALIZE_NULL_AND_REPLACEMENT_REGEX = /\u0000|\uFFFD/g;
+
+  var normalizeMarkupForTextOrAttribute = function(markup: mixed): string {
+    const markupString = typeof markup === 'string'
+      ? markup
+      : '' + (markup: any);
+    return markupString
+      .replace(NORMALIZE_NEWLINES_REGEX, '\n')
+      .replace(NORMALIZE_NULL_AND_REPLACEMENT_REGEX, '');
+  };
+
+  var warnForTextDifference = function(
+    serverText: string,
+    clientText: string | number,
+  ) {
     if (didWarnInvalidHydration) {
+      return;
+    }
+    const normalizedClientText = normalizeMarkupForTextOrAttribute(clientText);
+    const normalizedServerText = normalizeMarkupForTextOrAttribute(serverText);
+    if (normalizedServerText === normalizedClientText) {
       return;
     }
     didWarnInvalidHydration = true;
     warning(
       false,
       'Text content did not match. Server: "%s" Client: "%s"',
-      serverText,
-      clientText,
+      normalizedServerText,
+      normalizedClientText,
     );
   };
 
@@ -95,13 +123,22 @@ if (__DEV__) {
     if (didWarnInvalidHydration) {
       return;
     }
+    const normalizedClientValue = normalizeMarkupForTextOrAttribute(
+      clientValue,
+    );
+    const normalizedServerValue = normalizeMarkupForTextOrAttribute(
+      serverValue,
+    );
+    if (normalizedServerValue === normalizedClientValue) {
+      return;
+    }
     didWarnInvalidHydration = true;
     warning(
       false,
       'Prop `%s` did not match. Server: %s Client: %s',
       propName,
-      JSON.stringify(serverValue),
-      JSON.stringify(clientValue),
+      JSON.stringify(normalizedServerValue),
+      JSON.stringify(normalizedClientValue),
     );
   };
 
@@ -237,7 +274,10 @@ function setInitialDOMProperties(
       } else if (typeof nextProp === 'number') {
         setTextContent(domElement, '' + nextProp);
       }
-    } else if (propKey === SUPPRESS_CONTENT_EDITABLE_WARNING) {
+    } else if (
+      propKey === SUPPRESS_CONTENT_EDITABLE_WARNING ||
+      propKey === SUPPRESS_HYDRATION_WARNING
+    ) {
       // Noop
     } else if (registrationNameModules.hasOwnProperty(propKey)) {
       if (nextProp != null) {
@@ -628,7 +668,10 @@ var ReactDOMFiberComponent = {
         propKey === CHILDREN
       ) {
         // Noop. This is handled by the clear text mechanism.
-      } else if (propKey === SUPPRESS_CONTENT_EDITABLE_WARNING) {
+      } else if (
+        propKey === SUPPRESS_CONTENT_EDITABLE_WARNING ||
+        propKey === SUPPRESS_HYDRATION_WARNING
+      ) {
         // Noop
       } else if (registrationNameModules.hasOwnProperty(propKey)) {
         // This is a special case. If any listener updates we need to ensure
@@ -714,7 +757,10 @@ var ReactDOMFiberComponent = {
         ) {
           (updatePayload = updatePayload || []).push(propKey, '' + nextProp);
         }
-      } else if (propKey === SUPPRESS_CONTENT_EDITABLE_WARNING) {
+      } else if (
+        propKey === SUPPRESS_CONTENT_EDITABLE_WARNING ||
+        propKey === SUPPRESS_HYDRATION_WARNING
+      ) {
         // Noop
       } else if (registrationNameModules.hasOwnProperty(propKey)) {
         if (nextProp != null) {
@@ -788,6 +834,8 @@ var ReactDOMFiberComponent = {
     rootContainerElement: Element | Document,
   ): null | Array<mixed> {
     if (__DEV__) {
+      var suppressHydrationWarning =
+        rawProps[SUPPRESS_HYDRATION_WARNING] === true;
       var isCustomComponentTag = isCustomComponent(tag, rawProps);
       validatePropertiesInDevelopment(tag, rawProps);
       if (isCustomComponentTag && !didWarnShadyDOM && domElement.shadyRoot) {
@@ -946,14 +994,14 @@ var ReactDOMFiberComponent = {
         // TODO: Should we use domElement.firstChild.nodeValue to compare?
         if (typeof nextProp === 'string') {
           if (domElement.textContent !== nextProp) {
-            if (__DEV__) {
+            if (__DEV__ && !suppressHydrationWarning) {
               warnForTextDifference(domElement.textContent, nextProp);
             }
             updatePayload = [CHILDREN, nextProp];
           }
         } else if (typeof nextProp === 'number') {
           if (domElement.textContent !== '' + nextProp) {
-            if (__DEV__) {
+            if (__DEV__ && !suppressHydrationWarning) {
               warnForTextDifference(domElement.textContent, nextProp);
             }
             updatePayload = [CHILDREN, '' + nextProp];
@@ -970,8 +1018,11 @@ var ReactDOMFiberComponent = {
         // Validate that the properties correspond to their expected values.
         var serverValue;
         var propertyInfo;
-        if (
+        if (suppressHydrationWarning) {
+          // Don't bother comparing. We're ignoring all these warnings.
+        } else if (
           propKey === SUPPRESS_CONTENT_EDITABLE_WARNING ||
+          propKey === SUPPRESS_HYDRATION_WARNING ||
           // Controlled attributes are not validated
           // TODO: Only ignore them on controlled tags.
           propKey === 'value' ||
@@ -1045,7 +1096,7 @@ var ReactDOMFiberComponent = {
 
     if (__DEV__) {
       // $FlowFixMe - Should be inferred as not undefined.
-      if (extraAttributeNames.size > 0) {
+      if (extraAttributeNames.size > 0 && !suppressHydrationWarning) {
         // $FlowFixMe - Should be inferred as not undefined.
         warnForExtraAttributes(extraAttributeNames);
       }
@@ -1085,12 +1136,13 @@ var ReactDOMFiberComponent = {
 
   diffHydratedText(textNode: Text, text: string): boolean {
     const isDifferent = textNode.nodeValue !== text;
-    if (__DEV__) {
-      if (isDifferent) {
-        warnForTextDifference(textNode.nodeValue, text);
-      }
-    }
     return isDifferent;
+  },
+
+  warnForUnmatchedText(textNode: Text, text: string) {
+    if (__DEV__) {
+      warnForTextDifference(textNode.nodeValue, text);
+    }
   },
 
   warnForDeletedHydratableElement(

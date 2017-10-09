@@ -93,7 +93,7 @@ const bundles = [
   },
   {
     babelOpts: babelOptsReact,
-    bundleTypes: [FB_DEV, NODE_DEV],
+    bundleTypes: [FB_DEV, NODE_DEV, NODE_PROD],
     config: {
       destDir: 'build/',
       globals: {
@@ -288,10 +288,44 @@ const bundles = [
     useFiber: true,
   },
 
+  /******* React Native *******/
+  {
+    babelOpts: babelOptsReact,
+    bundleTypes: [RN_DEV, RN_PROD],
+    config: {
+      destDir: 'build/',
+      moduleName: 'ReactNativeRTFiber',
+      sourceMap: false,
+    },
+    entry: 'src/renderers/native-rt/ReactNativeRTFiberEntry',
+    externals: [
+      'ExceptionsManager',
+      'InitializeCore',
+      'Platform',
+      'BatchedBridge',
+      'RTManager',
+      'prop-types/checkPropTypes',
+    ],
+    hasteName: 'ReactNativeRTFiber',
+    isRenderer: true,
+    label: 'native-rt-fiber',
+    manglePropertiesOnProd: false,
+    name: 'react-native-rt-renderer',
+    paths: [
+      'src/renderers/native/**/*.js', // This is used since we reuse the error dialog code
+      'src/renderers/native-rt/**/*.js',
+      'src/renderers/shared/**/*.js',
+
+      'src/ReactVersion.js',
+      'src/shared/**/*.js',
+    ],
+    useFiber: true,
+  },
+
   /******* React Test Renderer *******/
   {
     babelOpts: babelOptsReact,
-    bundleTypes: [FB_DEV, NODE_DEV],
+    bundleTypes: [FB_DEV, NODE_DEV, NODE_PROD],
     config: {
       destDir: 'build/',
       moduleName: 'ReactTestRenderer',
@@ -316,7 +350,7 @@ const bundles = [
   },
   {
     babelOpts: babelOptsReact,
-    bundleTypes: [FB_DEV, NODE_DEV],
+    bundleTypes: [FB_DEV, NODE_DEV, NODE_PROD],
     config: {
       destDir: 'build/',
       moduleName: 'ReactShallowRenderer',
