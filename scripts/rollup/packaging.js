@@ -156,7 +156,7 @@ function copyBundleIntoNodePackage(packageName, filename, bundleType) {
 function copyNodePackageTemplate(packageName) {
   const from = resolve(`./packages/${packageName}`);
   const to = resolve(`./build/packages/${packageName}`);
-  const npmFrom = resolve(`${from}/npm`);
+  const npmFrom = `${from}/npm`;
   if (!fs.existsSync(npmFrom)) {
     // The package is not meant for npm consumption.
     return Promise.resolve();
@@ -166,16 +166,16 @@ function copyNodePackageTemplate(packageName) {
     return Promise.resolve();
   }
   fs.mkdirSync(to);
-  const files = require(resolve(`${from}/package.json`)).files;
+  const files = require(`${from}/package.json`).files;
   const whitelistedFilesPromises = fs
     .readdirSync(npmFrom)
     .filter(file => files && files.includes(file))
-    .map(file => asyncCopyTo(resolve(`${npmFrom}/${file}`), `${to}/${file}`));
+    .map(file => asyncCopyTo(`${npmFrom}/${file}`, `${to}/${file}`));
 
   return Promise.all([
     ...whitelistedFilesPromises,
-    asyncCopyTo(resolve(`${from}/package.json`), `${to}/package.json`),
-    asyncCopyTo(resolve(`${from}/README.md`), `${to}/README.md`),
+    asyncCopyTo(`${from}/package.json`, `${to}/package.json`),
+    asyncCopyTo(`${from}/README.md`, `${to}/README.md`),
     asyncCopyTo(resolve('./LICENSE'), `${to}/LICENSE`),
   ]);
 }
