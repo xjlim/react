@@ -165,15 +165,19 @@ function copyNodePackageTemplate(packageName) {
     // We already created this package (e.g. due to another entry point).
     return Promise.resolve();
   }
-  // TODO: verify that all copied files are either in the "files"
-  // whitelist or implicitly published by npm.
-  return asyncCopyTo(npmFrom, to).then(() =>
-    Promise.all([
-      asyncCopyTo(resolve(`${from}/package.json`), `${to}/package.json`),
-      asyncCopyTo(resolve(`${from}/README.md`), `${to}/README.md`),
-      asyncCopyTo(resolve('./LICENSE'), `${to}/LICENSE`),
-    ])
-  );
+  fs.mkdirSync(to);
+  const files = require(resolve(`${from}/package.json`)).files;
+  const whitelistedFilesPromises = fs
+    .readdirSync(npmFrom)
+    .filter(file => files && files.includes(file))
+    .map(file => asyncCopyTo(resolve(`${npmFrom}/${file}`), `${to}/${file}`));
+
+  return Promise.all([
+    ...whitelistedFilesPromises,
+    asyncCopyTo(resolve(`${from}/package.json`), `${to}/package.json`),
+    asyncCopyTo(resolve(`${from}/README.md`), `${to}/README.md`),
+    asyncCopyTo(resolve('./LICENSE'), `${to}/LICENSE`),
+  ]);
 }
 
 function createNodePackage(bundleType, packageName, filename) {
