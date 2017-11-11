@@ -9,4 +9,8 @@
 
 'use strict';
 
-module.exports = require('./src/server/ReactDOMServerBrowser');
+var ReactDOMServerBrowser = require('./src/server/ReactDOMServerBrowser');
+
+// TODO: decide on the top-level export form.
+// This is hacky but makes it work with both Rollup and Jest.
+module.exports = ReactDOMServerBrowser.default ? ReactDOMServerBrowser.default : ReactDOMServerBrowser;

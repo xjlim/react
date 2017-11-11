@@ -14,7 +14,7 @@ import {
   renderToStaticNodeStream,
 } from './ReactDOMNodeStreamRenderer';
 
-export {
+export default {
   renderToString,
   renderToStaticMarkup,
   renderToNodeStream,

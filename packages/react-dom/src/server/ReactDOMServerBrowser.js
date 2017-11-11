@@ -27,7 +27,7 @@ function renderToStaticNodeStream() {
   );
 }
 
-export {
+export default {
   renderToString,
   renderToStaticMarkup,
   renderToNodeStream,
